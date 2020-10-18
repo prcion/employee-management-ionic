@@ -1,0 +1,7 @@
+{
+  "name": "employee-management-ionic",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "react"
+}
