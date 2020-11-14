@@ -1,10 +1,10 @@
 
 
-1. vizualizarea listei de angajati
+1. vizualizarea listei de activitati
 
-2. add/edit/delete angajat
+2. add/edit activitate
 
-3. login angajat
+3. login user
 
 4. trimite email unui anagajat
 
