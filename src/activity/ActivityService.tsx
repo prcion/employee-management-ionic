@@ -1,5 +1,6 @@
 import {ActivityInterface} from "./ActivityInterface";
 import axios from 'axios';
+import SockJS from 'sockjs-client';
 const beApi = 'http://localhost:8080/api/activity';
 
 export const getActivities: () => Promise<ActivityInterface[]> = () => {
@@ -32,4 +33,33 @@ export const updateActivity: (activity: ActivityInterface) => Promise<ActivityIn
         .catch(err => {
             return Promise.reject(err);
         });
+}
+
+interface MessageData {
+    event: string;
+    payload: {
+        activity: ActivityInterface;
+    };
+}
+
+
+export const newWebSocket = (onMessage: (data: MessageData) => void) => {
+    const ws = new SockJS(`http://localhost:8080/ws/topic/news`, null, {})
+
+    ws.onopen = () => {
+        console.log('web socket onopen');
+    };
+    ws.onclose = () => {
+        console.log('web socket onclose');
+    };
+    ws.onerror = error => {
+        console.log('web socket onerror', error);
+    };
+    ws.onmessage = messageEvent => {
+        console.log('web socket onmessage');
+        onMessage(JSON.parse(messageEvent.data));
+    };
+    return () => {
+        ws.close();
+    }
 }

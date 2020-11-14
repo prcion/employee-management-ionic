@@ -1,6 +1,6 @@
 import React, {useCallback, useEffect, useReducer} from "react";
 import {ActivityInterface} from "./ActivityInterface";
-import {createActivity, getActivities, updateActivity} from "./ActivityService";
+import {createActivity, getActivities, newWebSocket, updateActivity} from "./ActivityService";
 import PropTypes from 'prop-types';
 
 type SaveActivityFn = (activity: ActivityInterface) => Promise<any>;
@@ -73,6 +73,7 @@ export const ActivityProvider: React.FC<ActivityProviderProps> = ({children}) =>
     const [state, dispatch] = useReducer(reducer, initialState);
     const { activities, fetching, fetchingError, saving, savingError } = state;
     useEffect(getActivitiesEffect, []);
+    useEffect(wsEffect, []);
     const saveActivity = useCallback<SaveActivityFn>(saveActivityCallback, []);
     const value = { activities, fetching, fetchingError, saving, savingError, saveActivity};
 
@@ -109,6 +110,23 @@ export const ActivityProvider: React.FC<ActivityProviderProps> = ({children}) =>
             dispatch({ type: SAVE_ACTIVITY_SUCCEEDED, payload: { item: savedItem } });
         } catch (error) {
             dispatch({ type: SAVE_ACTIVITY_FAILED, payload: { error } });
+        }
+    }
+
+    function wsEffect() {
+        let canceled = false;
+        const closeWebSocket = newWebSocket(message => {
+            if (canceled) {
+                return;
+            }
+            const { event, payload: { activity }} = message;
+            if (event === 'created' || event === 'updated') {
+                dispatch({ type: SAVE_ACTIVITY_SUCCEEDED, payload: { activity } });
+            }
+        });
+        return () => {
+            canceled = true;
+            closeWebSocket();
         }
     }
 }
