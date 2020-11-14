@@ -22,15 +22,21 @@ import '@ionic/react/css/display.css';
 /* Theme variables */
 import './theme/variables.css';
 import {ActivityList} from "./activity";
+import {ActivityProvider} from "./activity/ActivityProvider";
+import ActivityEdit from "./activity/ActivityEdit";
 
 const App: React.FC = () => (
     <IonApp>
-      <IonReactRouter>
-        <IonRouterOutlet>
-          <Route path="/activities" component={ActivityList} exact={true} />
-          <Route exact path="/" render={() => <Redirect to="/activities" />} />
-        </IonRouterOutlet>
-      </IonReactRouter>
+        <ActivityProvider>
+          <IonReactRouter>
+            <IonRouterOutlet>
+                <Route path="/activities" component={ActivityList} exact={true} />
+                <Route path="/activity" component={ActivityEdit} exact={true} />
+                <Route path="/activity/:id" component={ActivityEdit} exact={true} />
+                <Route exact path="/" render={() => <Redirect to="/activities" />} />
+            </IonRouterOutlet>
+          </IonReactRouter>
+        </ActivityProvider>
     </IonApp>
 );
 
