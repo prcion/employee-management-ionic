@@ -54,9 +54,7 @@ export const newWebSocket = (onMessage: (data: MessageData) => void) => {
     });
     ws.onConnect = () => {
         console.log('web socket connect');
-        ws.subscribe("/topic/news", (re) => {
-            console.log("in new web socket " +  JSON.parse(re.body).event);
-            console.log(onMessage(JSON.parse(re.body)));
+        ws.subscribe("/topic/activity", (re) => {
             return onMessage(JSON.parse(re.body));
         });
 

@@ -123,8 +123,7 @@ export const ActivityProvider: React.FC<ActivityProviderProps> = ({children}) =>
                 return;
             }
             const { event,  payload } = message.body;
-            console.log(event)
-            console.log("In ws effect" + payload.id);
+
             if (event === 'created' || event === 'updated') {
                 console.log("ab");
                 dispatch({ type: SAVE_ACTIVITY_SUCCEEDED, payload: { payload } });
