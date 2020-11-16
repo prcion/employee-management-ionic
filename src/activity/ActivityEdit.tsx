@@ -33,7 +33,7 @@ const ActivityEdit: React.FC<ActivityEditProps> = ({ history, match }) => {
         }
     }, [match.params.id, activities]);
     const handleSave = () => {
-        const editedActivity = activity ? { ...activity, name } : { name };
+        const editedActivity = activity ? { ...activity, name } : { name: name, createdDate:0, updatedDate:0  };
         saveActivity && saveActivity(editedActivity).then(() => history.goBack());
     };
     return (
@@ -49,7 +49,7 @@ const ActivityEdit: React.FC<ActivityEditProps> = ({ history, match }) => {
                 </IonToolbar>
             </IonHeader>
             <IonContent>
-                <IonInput value={name} onIonChange={e => setName(e.detail.value || '')} />
+                <IonInput placeholder={"Name"} value={name} onIonChange={e => setName(e.detail.value || '')} />
                 <IonLoading isOpen={saving} />
                 {savingError && (<div>{savingError.message || 'Failed to save item'}</div>)}
             </IonContent>

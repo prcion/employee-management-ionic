@@ -52,7 +52,10 @@ const reducer: (state: ActivityState, action: ActionProps) => ActivityState =
                 return { ...state, savingError: null, saving: true };
             case SAVE_ACTIVITY_SUCCEEDED:
                 const activities = [...(state.activities || [])];
-                const activity = payload.item;
+                let activity = payload.item;
+                if (activity == undefined) {
+                    activity = payload.payload;
+                }
                 const index = activities.findIndex(ac => ac.id === activity.id);
                 if (index === -1) {
                     activities.splice(0, 0, activity);
@@ -115,13 +118,16 @@ export const ActivityProvider: React.FC<ActivityProviderProps> = ({children}) =>
 
     function wsEffect() {
         let canceled = false;
-        const closeWebSocket = newWebSocket(message => {
+        const closeWebSocket = newWebSocket((message) => {
             if (canceled) {
                 return;
             }
-            const { event, payload: { activity }} = message;
+            const { event,  payload } = message.body;
+            console.log(event)
+            console.log("In ws effect" + payload.id);
             if (event === 'created' || event === 'updated') {
-                dispatch({ type: SAVE_ACTIVITY_SUCCEEDED, payload: { activity } });
+                console.log("ab");
+                dispatch({ type: SAVE_ACTIVITY_SUCCEEDED, payload: { payload } });
             }
         });
         return () => {

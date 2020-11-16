@@ -40,7 +40,7 @@ const ActivityList: React.FC<RouteComponentProps> = ({ history }) => {
                     <IonList>
                         {
                             activities.map((activity: ActivityInterface) =>
-                                <Activity key={activity.id} id={activity.id} name={activity.name} onEdit={id => history.push(`/activity/${id}`)} />)
+                                <Activity key={activity.id} id={activity.id} name={activity.name} updatedDate={activity.updatedDate} createdDate={activity.createdDate} onEdit={id => history.push(`/activity/${id}`)} />)
                         }
                     </IonList>
                 )}
