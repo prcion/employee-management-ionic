@@ -2,7 +2,7 @@ import React, {useCallback, useContext, useEffect, useReducer} from "react";
 import {ActivityInterface} from "./ActivityInterface";
 import {createActivity, getActivities, newWebSocket, updateActivity} from "./ActivityService";
 import PropTypes from 'prop-types';
-import {AuthContext} from "../auth";
+import {AuthContext, LogoutFn} from "../auth";
 
 type SaveActivityFn = (activity: ActivityInterface) => Promise<any>;
 
@@ -13,6 +13,7 @@ export interface ActivityState {
     saving: boolean;
     savingError?: Error | null;
     saveActivity?: SaveActivityFn;
+    logout?: LogoutFn;
 }
 
 export interface ActivityProps extends ActivityState {
@@ -74,13 +75,13 @@ const reducer: (state: ActivityState, action: ActionProps) => ActivityState =
 export const ActivityContext = React.createContext<ActivityState>(initialState);
 
 export const ActivityProvider: React.FC<ActivityProviderProps> = ({children}) => {
-    const { token } = useContext(AuthContext);
+    const { logout, token } = useContext(AuthContext);
     const [state, dispatch] = useReducer(reducer, initialState);
     const { activities, fetching, fetchingError, saving, savingError } = state;
     useEffect(getActivitiesEffect, [token]);
     useEffect(wsEffect, []);
     const saveActivity = useCallback<SaveActivityFn>(saveActivityCallback, [token]);
-    const value = { activities, fetching, fetchingError, saving, savingError, saveActivity};
+    const value = { logout, activities, fetching, fetchingError, saving, savingError, saveActivity};
 
     return (
         <ActivityContext.Provider value={value}>

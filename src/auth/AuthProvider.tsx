@@ -1,15 +1,19 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import { login as loginApi } from './AuthService';
+import {Plugins} from "@capacitor/core";
+import {Redirect} from "react-router-dom";
 
 
 type LoginFn = (username?: string, password?: string) => void;
+export type LogoutFn = () => void;
 
 export interface AuthState {
   authenticationError: Error | null;
   isAuthenticated: boolean;
   isAuthenticating: boolean;
   login?: LoginFn;
+  logout?: LogoutFn;
   pendingAuthentication?: boolean;
   username?: string;
   password?: string;
@@ -24,7 +28,19 @@ const initialState: AuthState = {
   token: '',
 };
 
-export const AuthContext = React.createContext<AuthState>(initialState);
+function intialStateVerifyIfIsAuthenticated() :AuthState  {
+  const { Storage } = Plugins;
+  const res = Storage.get({ key: 'token' });
+  res.then(r => {
+    if(r.value != null) {
+      initialState.isAuthenticated = true;
+      initialState.token = r.value;
+    }
+  });
+  return initialState;
+}
+
+export const AuthContext = React.createContext<AuthState>(intialStateVerifyIfIsAuthenticated());
 
 interface AuthProviderProps {
   children: PropTypes.ReactNodeLike,
@@ -34,8 +50,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [state, setState] = useState<AuthState>(initialState);
   const { isAuthenticated, isAuthenticating, authenticationError, pendingAuthentication, token } = state;
   const login = useCallback<LoginFn>(loginCallback, []);
+  const logout = useCallback<LogoutFn>(logoutCallback, []);
   useEffect(authenticationEffect, [pendingAuthentication]);
-  const value = { isAuthenticated, login, isAuthenticating, authenticationError, token };
+  const value = { isAuthenticated, login, logout, isAuthenticating, authenticationError, token };
+  const { Storage } = Plugins;
 
   return (
     <AuthContext.Provider value={value}>
@@ -43,8 +61,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     </AuthContext.Provider>
   );
 
-  function loginCallback(username?: string, password?: string): void {
+  function logoutCallback(): void {
+    console.log("11");
+    Storage.clear();
 
+    setState({
+      ...state,
+      token: "",
+      isAuthenticated: false,
+      isAuthenticating: false,
+    });
+
+  }
+
+  function loginCallback(username?: string, password?: string): void {
+    console.log("vine aici");
     setState({
       ...state,
       pendingAuthentication: true,
@@ -71,6 +102,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         });
         const { username, password } = state;
         const { token } = await loginApi(username, password);
+        await Storage.set({
+          key: 'token',
+          value: token
+        });
         if (canceled) {
           return;
         }

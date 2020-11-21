@@ -1,9 +1,10 @@
 import {
+    IonButton,
     IonContent,
     IonFab,
     IonFabButton,
     IonHeader,
-    IonIcon,
+    IonIcon, IonInfiniteScroll, IonInfiniteScrollContent,
     IonItem,
     IonLabel,
     IonList,
@@ -12,22 +13,35 @@ import {
     IonTitle,
     IonToolbar
 } from "@ionic/react";
-import React, {useContext} from "react";
+import React, {useContext, useState} from "react";
 import {ActivityInterface} from "./ActivityInterface";
 import Activity from "./Activity";
 import {add} from "ionicons/icons";
 import {ActivityContext} from "./ActivityProvider";
 import {RouteComponentProps} from "react-router";
+import {Plugins} from "@capacitor/core";
+import {Redirect} from "react-router-dom";
+import {AuthContext} from "../auth";
 
 const ActivityList: React.FC<RouteComponentProps> = ({ history }) => {
-    const { activities, fetching, fetchingError } = useContext(ActivityContext);
+    const { logout, activities, fetching, fetchingError } = useContext(ActivityContext);
+
+    const handleLogOut = () => {
+        logout?.();
+    };
+
+
     return (
         <IonPage>
             <IonHeader>
                 <IonToolbar>
                     <IonTitle>My Activities</IonTitle>
                 </IonToolbar>
+
             </IonHeader>
+            <IonFab vertical="top" horizontal="end" slot="fixed">
+                <IonButton onClick={handleLogOut}>Log out</IonButton>
+            </IonFab>
             <IonContent>
                 <IonLoading isOpen={fetching} message="Fetching items" />
                 <IonItem>
@@ -47,6 +61,7 @@ const ActivityList: React.FC<RouteComponentProps> = ({ history }) => {
                 {fetchingError && (
                     <div>{fetchingError.message || 'Failed to fetch items'}</div>
                 )}
+
                 <IonFab vertical="bottom" horizontal="center" slot="fixed">
                     <IonFabButton onClick={() => history.push('/activity')}>
                         <IonIcon icon={add} />
