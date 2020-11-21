@@ -1,12 +1,14 @@
 import {ActivityInterface} from "./ActivityInterface";
 import axios from 'axios';
 import {Client} from '@stomp/stompjs';
+import {authConfig} from "../core";
 
 const beApi = 'http://localhost:8080/api/activity';
 
-export const getActivities: () => Promise<ActivityInterface[]> = () => {
+export const getActivities: (token: string) => Promise<ActivityInterface[]> = token => {
+    console.log(token);
     return axios
-        .get<ActivityInterface[]>(`${beApi}/all`)
+        .get<ActivityInterface[]>(`${beApi}`, authConfig(token))
         .then(res => {
             return Promise.resolve(res.data);
         })
@@ -16,8 +18,8 @@ export const getActivities: () => Promise<ActivityInterface[]> = () => {
 }
 
 
-export const createActivity: (activity: ActivityInterface) => Promise<ActivityInterface[]> = activity => {
-    return axios.post(`${beApi}/test`, activity)
+export const createActivity: (token: string, activity: ActivityInterface) => Promise<ActivityInterface[]> = (token, activity) => {
+    return axios.post(`${beApi}`, activity, authConfig(token))
         .then(res => {
             return Promise.resolve(res.data);
         })
@@ -26,8 +28,8 @@ export const createActivity: (activity: ActivityInterface) => Promise<ActivityIn
         });
 }
 
-export const updateActivity: (activity: ActivityInterface) => Promise<ActivityInterface[]> = activity => {
-    return axios.put(`${beApi}/${activity.id}`, activity)
+export const updateActivity: (token: string, activity: ActivityInterface) => Promise<ActivityInterface[]> = (token, activity) => {
+    return axios.put(`${beApi}/${activity.id}`, activity, authConfig(token))
         .then(res => {
             return Promise.resolve(res.data);
         })

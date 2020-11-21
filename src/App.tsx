@@ -24,19 +24,23 @@ import './theme/variables.css';
 import {ActivityList} from "./activity";
 import {ActivityProvider} from "./activity/ActivityProvider";
 import ActivityEdit from "./activity/ActivityEdit";
+import {AuthProvider, Login, PrivateRoute} from "./auth";
 
 const App: React.FC = () => (
     <IonApp>
-        <ActivityProvider>
-          <IonReactRouter>
+        <IonReactRouter>
             <IonRouterOutlet>
-                <Route path="/activities" component={ActivityList} exact={true} />
-                <Route path="/activity" component={ActivityEdit} exact={true} />
-                <Route path="/activity/:id" component={ActivityEdit} exact={true} />
-                <Route exact path="/" render={() => <Redirect to="/activities" />} />
+                <AuthProvider>
+                    <Route path="/login" component={Login} exact={true}/>
+                <ActivityProvider>
+                    <PrivateRoute path="/activities" component={ActivityList} exact={true} />
+                    <PrivateRoute path="/activity" component={ActivityEdit} exact={true} />
+                    <PrivateRoute path="/activity/:id" component={ActivityEdit} exact={true} />
+                </ActivityProvider>
+                    <Route exact path="/" render={() => <Redirect to="/activities" />} />
+                </AuthProvider>
             </IonRouterOutlet>
-          </IonReactRouter>
-        </ActivityProvider>
+        </IonReactRouter>
     </IonApp>
 );
 

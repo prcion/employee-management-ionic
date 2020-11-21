@@ -1,7 +1,8 @@
-import React, {useCallback, useEffect, useReducer} from "react";
+import React, {useCallback, useContext, useEffect, useReducer} from "react";
 import {ActivityInterface} from "./ActivityInterface";
 import {createActivity, getActivities, newWebSocket, updateActivity} from "./ActivityService";
 import PropTypes from 'prop-types';
+import {AuthContext} from "../auth";
 
 type SaveActivityFn = (activity: ActivityInterface) => Promise<any>;
 
@@ -73,11 +74,12 @@ const reducer: (state: ActivityState, action: ActionProps) => ActivityState =
 export const ActivityContext = React.createContext<ActivityState>(initialState);
 
 export const ActivityProvider: React.FC<ActivityProviderProps> = ({children}) => {
+    const { token } = useContext(AuthContext);
     const [state, dispatch] = useReducer(reducer, initialState);
     const { activities, fetching, fetchingError, saving, savingError } = state;
-    useEffect(getActivitiesEffect, []);
+    useEffect(getActivitiesEffect, [token]);
     useEffect(wsEffect, []);
-    const saveActivity = useCallback<SaveActivityFn>(saveActivityCallback, []);
+    const saveActivity = useCallback<SaveActivityFn>(saveActivityCallback, [token]);
     const value = { activities, fetching, fetchingError, saving, savingError, saveActivity};
 
     return (
@@ -94,9 +96,12 @@ export const ActivityProvider: React.FC<ActivityProviderProps> = ({children}) =>
         }
 
         async function fetchActivities() {
+            if (!token?.trim()) {
+                return;
+            }
             try {
                 dispatch({ type: FETCH_ACTIVITY_STARTED });
-                const items = await getActivities();
+                const items = await getActivities(token);
                 if (!canceled) {
                     dispatch({ type: FETCH_ACTIVITY_SUCCEEDED, payload: { items } });
                 }
@@ -109,7 +114,7 @@ export const ActivityProvider: React.FC<ActivityProviderProps> = ({children}) =>
     async function saveActivityCallback(activity: ActivityInterface) {
         try {
             dispatch({ type: SAVE_ACTIVITY_STARTED });
-            const savedItem = await (activity.id ? updateActivity(activity) : createActivity(activity));
+            const savedItem = await (activity.id ? updateActivity(token, activity) : createActivity(token, activity));
             dispatch({ type: SAVE_ACTIVITY_SUCCEEDED, payload: { item: savedItem } });
         } catch (error) {
             dispatch({ type: SAVE_ACTIVITY_FAILED, payload: { error } });
@@ -122,11 +127,11 @@ export const ActivityProvider: React.FC<ActivityProviderProps> = ({children}) =>
             if (canceled) {
                 return;
             }
-            const { event,  payload } = message.body;
+            const {event, payload} = message.body;
 
             if (event === 'created' || event === 'updated') {
                 console.log("ab");
-                dispatch({ type: SAVE_ACTIVITY_SUCCEEDED, payload: { payload } });
+                dispatch({type: SAVE_ACTIVITY_SUCCEEDED, payload: {payload}});
             }
         });
         return () => {
