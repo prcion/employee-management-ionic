@@ -19,6 +19,7 @@ import Activity from "./Activity";
 import {add} from "ionicons/icons";
 import {ActivityContext} from "./ActivityProvider";
 import {RouteComponentProps} from "react-router";
+import {useNetwork} from "../network/useNetwork";
 
 
 const ActivityList: React.FC<RouteComponentProps> = ({ history }) => {
