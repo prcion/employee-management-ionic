@@ -7,7 +7,7 @@ import {Plugins} from "@capacitor/core";
 import {useNetwork} from "../network/useNetwork";
 
 type SaveActivityFn = (activity: ActivityInterface) => Promise<any>;
-export type incrementPage = () => void;
+export type incrementPage = (filter: string | undefined | null) => void;
 export interface ActivityState {
     activities?: ActivityInterface[];
     fetching: boolean;
@@ -44,6 +44,7 @@ const FETCH_ACTIVITY_FAILED = 'FETCH_ACTIVITY_FAILED';
 const SAVE_ACTIVITY_STARTED = 'SAVE_ACTIVITY_STARTED';
 const SAVE_ACTIVITY_SUCCEEDED = 'SAVE_ACTIVITY_SUCCEEDED';
 const SAVE_ACTIVITY_FAILED = 'SAVE_ACTIVITY_FAILED';
+const FETCH_ACTIVITY_SUCCEEDED_WITHOUT_FILTER = "FETCH_ACTIVITY_SUCCEEDED_WITHOUT_FILTER";
 
 const reducer: (state: ActivityState, action: ActionProps) => ActivityState =
     (state, { type, payload }) => {
@@ -59,6 +60,13 @@ const reducer: (state: ActivityState, action: ActionProps) => ActivityState =
                 });
                 console.log([...(state.activities || []), ...payload.items]);
                 return { ...state, activities: [...(state.activities || []), ...payload.items], fetching: false };
+            case FETCH_ACTIVITY_SUCCEEDED_WITHOUT_FILTER:
+                Storage.remove({ key: 'activities' });
+                Storage.set({
+                    key: 'activities',
+                    value: JSON.stringify(payload.items)
+                });
+                return { ...state, activities: payload.items, fetching: false };
             case FETCH_ACTIVITY_FAILED:
                 return { ...state, fetchingError: payload.error, fetching: false };
             case SAVE_ACTIVITY_STARTED:
@@ -98,7 +106,8 @@ export const ActivityProvider: React.FC<ActivityProviderProps> = ({children}) =>
     let [page, incremPage] = useState(0);
     const incrementPage = useCallback<incrementPage>(incrementPageCallback, []);
     const [disableInfiniteScroll, setDisableInfiniteScroll] = useState<boolean>(false);
-    useEffect(getActivitiesEffect, [token, page]);
+    let [filterActivity, changeFilterActivity] = useState("");
+    useEffect(getActivitiesEffect, [token, page, filterActivity]);
     useEffect(wsEffect, []);
     const saveActivity = useCallback<SaveActivityFn>(saveActivityCallback, [token]);
     const value = { disableInfiniteScroll, incrementPage, logout, activities, fetching, fetchingError, saving, savingError, saveActivity};
@@ -110,9 +119,14 @@ export const ActivityProvider: React.FC<ActivityProviderProps> = ({children}) =>
         </ActivityContext.Provider>
     );
 
-    function incrementPageCallback(): void {
-        incremPage(page++);
-        console.log(page);
+    function incrementPageCallback(filter: string | undefined | null): void {
+        if (filter != undefined) {
+            incremPage( 0);
+            changeFilterActivity(filter);
+            console.log("aciii");
+        } else {
+            incremPage(page++);
+        }
     }
 
     function getActivitiesEffect() {
@@ -137,10 +151,15 @@ export const ActivityProvider: React.FC<ActivityProviderProps> = ({children}) =>
             }
             try {
                 dispatch({ type: FETCH_ACTIVITY_STARTED });
-                const items = await getActivities(token, page);
+                console.log("Filter activity: " + filterActivity);
+                const items = await getActivities(token, page, filterActivity);
                 if (items && items.length > 0) {
                     if (!canceled) {
-                        dispatch({ type: FETCH_ACTIVITY_SUCCEEDED, payload: { items } });
+                        if (filterActivity != undefined) {
+                            dispatch({type: FETCH_ACTIVITY_SUCCEEDED, payload: {items}});
+                        } {
+                            dispatch({type: FETCH_ACTIVITY_SUCCEEDED_WITHOUT_FILTER, payload: {items}});
+                        }
                     }
                     setDisableInfiniteScroll(items.length < 10);
                 } else {

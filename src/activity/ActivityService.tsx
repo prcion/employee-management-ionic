@@ -5,10 +5,10 @@ import {authConfig} from "../core";
 
 const beApi = 'http://localhost:8080/api/activity';
 
-export const getActivities: (token: string, page: number) => Promise<ActivityInterface[]> = (token, page) => {
+export const getActivities: (token: string, page: number, filterActivity: string) => Promise<ActivityInterface[]> = (token, page, filterActivity) => {
     console.log(token);
     return axios
-        .get(`${beApi}` + `?page=${page}&size=15`, authConfig(token))
+        .get(`${beApi}` + `?page=${page}&size=15` + `&name=${filterActivity}`, authConfig(token))
         .then(res => {
             console.log(res);
             return Promise.resolve(res.data.content);

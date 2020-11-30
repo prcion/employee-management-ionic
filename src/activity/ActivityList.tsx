@@ -4,7 +4,7 @@ import {
     IonFab,
     IonFabButton,
     IonHeader,
-    IonIcon, IonInfiniteScroll, IonInfiniteScrollContent,
+    IonIcon, IonInfiniteScroll, IonInfiniteScrollContent, IonInput,
     IonItem,
     IonLabel,
     IonList,
@@ -25,18 +25,18 @@ import {isNumber} from "util";
 
 const ActivityList: React.FC<RouteComponentProps> = ({ history }) => {
     let { disableInfiniteScroll, incrementPage, logout, activities, fetching, fetchingError } = useContext(ActivityContext);
-    const { networkStatus } = useNetwork();
-    const [items, setItems] = useState<string[]>([]);
-    // const [page, incrementPage] = useState(0);
+    let filterInput;
     const handleLogOut = () => {
         logout?.();
     };
 
-    async function searchNext($event: CustomEvent<void>) {
-        incrementPage?.();
-        ($event.target as HTMLIonInfiniteScrollElement).complete();
+    async function searchNext($event: CustomEvent<void> | null, filter: string | undefined | null) {
+        console.log('dsa');
+        incrementPage?.(filter);
+        if ($event != null) {
+        ($event?.target as HTMLIonInfiniteScrollElement).complete();
+        }
     }
-
 
     return (
         <IonPage>
@@ -50,6 +50,10 @@ const ActivityList: React.FC<RouteComponentProps> = ({ history }) => {
                 <IonButton onClick={handleLogOut}>Log out</IonButton>
             </IonFab>
             <IonContent>
+                <IonInput
+                  placeholder="Filter"
+                  value={filterInput}
+                  onIonChange={e =>  {searchNext(null,  e.detail.value)}}/>I
                 <IonLoading isOpen={fetching} message="Fetching items" />
                 <IonItem>
                     <IonLabel>ID</IonLabel>
@@ -70,7 +74,7 @@ const ActivityList: React.FC<RouteComponentProps> = ({ history }) => {
                 )}
                 <IonInfiniteScroll threshold="100px"
                                    disabled={disableInfiniteScroll}
-                                   onIonInfinite={(e: CustomEvent<void>) => searchNext(e)}>
+                                   onIonInfinite={(e: CustomEvent<void>) => searchNext(e, "")}>
                     <IonInfiniteScrollContent
                       loadingText="Loading more activities...">
                     </IonInfiniteScrollContent>
