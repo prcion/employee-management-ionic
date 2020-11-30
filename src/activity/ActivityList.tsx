@@ -30,11 +30,12 @@ const ActivityList: React.FC<RouteComponentProps> = ({ history }) => {
         logout?.();
     };
 
-    async function searchNext($event: CustomEvent<void> | null, filter: string | undefined | null) {
-        console.log('dsa');
-        incrementPage?.(filter);
+    async function searchNext($event: CustomEvent<void> | null, filter: string | undefined | null, isInfiniteScrool: boolean) {
         if ($event != null) {
-        ($event?.target as HTMLIonInfiniteScrollElement).complete();
+            incrementPage?.(null, isInfiniteScrool);
+            ($event?.target as HTMLIonInfiniteScrollElement).complete();
+        } else {
+            incrementPage?.(filter, isInfiniteScrool);
         }
     }
 
@@ -53,7 +54,7 @@ const ActivityList: React.FC<RouteComponentProps> = ({ history }) => {
                 <IonInput
                   placeholder="Filter"
                   value={filterInput}
-                  onIonChange={e =>  {searchNext(null,  e.detail.value)}}/>I
+                  onIonChange={e =>  {searchNext(null,  e.detail.value, false)}}/>I
                 <IonLoading isOpen={fetching} message="Fetching items" />
                 <IonItem>
                     <IonLabel>ID</IonLabel>
@@ -74,7 +75,7 @@ const ActivityList: React.FC<RouteComponentProps> = ({ history }) => {
                 )}
                 <IonInfiniteScroll threshold="100px"
                                    disabled={disableInfiniteScroll}
-                                   onIonInfinite={(e: CustomEvent<void>) => searchNext(e, "")}>
+                                   onIonInfinite={(e: CustomEvent<void>) => searchNext(e, "", true)}>
                     <IonInfiniteScrollContent
                       loadingText="Loading more activities...">
                     </IonInfiniteScrollContent>

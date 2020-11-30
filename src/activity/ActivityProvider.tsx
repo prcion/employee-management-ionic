@@ -7,7 +7,7 @@ import {Plugins} from "@capacitor/core";
 import {useNetwork} from "../network/useNetwork";
 
 type SaveActivityFn = (activity: ActivityInterface) => Promise<any>;
-export type incrementPage = (filter: string | undefined | null) => void;
+export type incrementPage = (filter: string | undefined | null, isInfiniteScrool: boolean) => void;
 export interface ActivityState {
     activities?: ActivityInterface[];
     fetching: boolean;
@@ -52,7 +52,7 @@ const reducer: (state: ActivityState, action: ActionProps) => ActivityState =
         switch(type) {
             case FETCH_ACTIVITY_STARTED:
                 return { ...state, fetching: true };
-            case FETCH_ACTIVITY_SUCCEEDED:
+            case FETCH_ACTIVITY_SUCCEEDED_WITHOUT_FILTER:
                 Storage.remove({ key: 'activities' });
                 Storage.set({
                     key: 'activities',
@@ -60,7 +60,8 @@ const reducer: (state: ActivityState, action: ActionProps) => ActivityState =
                 });
                 console.log([...(state.activities || []), ...payload.items]);
                 return { ...state, activities: [...(state.activities || []), ...payload.items], fetching: false };
-            case FETCH_ACTIVITY_SUCCEEDED_WITHOUT_FILTER:
+            case FETCH_ACTIVITY_SUCCEEDED:
+                console.log("with filets");
                 Storage.remove({ key: 'activities' });
                 Storage.set({
                     key: 'activities',
@@ -106,7 +107,8 @@ export const ActivityProvider: React.FC<ActivityProviderProps> = ({children}) =>
     let [page, incremPage] = useState(0);
     const incrementPage = useCallback<incrementPage>(incrementPageCallback, []);
     const [disableInfiniteScroll, setDisableInfiniteScroll] = useState<boolean>(false);
-    let [filterActivity, changeFilterActivity] = useState("");
+    let [filterActivity, changeFilterActivity] = useState<string>("");
+    let [isInfiniteScroll, changeIsInfiniteScroll] = useState(false);
     useEffect(getActivitiesEffect, [token, page, filterActivity]);
     useEffect(wsEffect, []);
     const saveActivity = useCallback<SaveActivityFn>(saveActivityCallback, [token]);
@@ -119,12 +121,15 @@ export const ActivityProvider: React.FC<ActivityProviderProps> = ({children}) =>
         </ActivityContext.Provider>
     );
 
-    function incrementPageCallback(filter: string | undefined | null): void {
+    function incrementPageCallback(filter: string | undefined | null, isInfiniteScrool: boolean): void {
+
         if (filter != undefined) {
             incremPage( 0);
+            changeIsInfiniteScroll(false);
             changeFilterActivity(filter);
-            console.log("aciii");
-        } else {
+        }
+        if (isInfiniteScrool) {
+            changeIsInfiniteScroll(true);
             incremPage(page++);
         }
     }
@@ -153,11 +158,12 @@ export const ActivityProvider: React.FC<ActivityProviderProps> = ({children}) =>
                 dispatch({ type: FETCH_ACTIVITY_STARTED });
                 console.log("Filter activity: " + filterActivity);
                 const items = await getActivities(token, page, filterActivity);
-                if (items && items.length > 0) {
+                if (items) {
                     if (!canceled) {
-                        if (filterActivity != undefined) {
+                        console.log("fetch items: " + filterActivity);
+                        if (!isInfiniteScroll) {
                             dispatch({type: FETCH_ACTIVITY_SUCCEEDED, payload: {items}});
-                        } {
+                        } else {
                             dispatch({type: FETCH_ACTIVITY_SUCCEEDED_WITHOUT_FILTER, payload: {items}});
                         }
                     }

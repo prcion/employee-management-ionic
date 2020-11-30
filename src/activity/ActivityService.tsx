@@ -10,7 +10,7 @@ export const getActivities: (token: string, page: number, filterActivity: string
     return axios
         .get(`${beApi}` + `?page=${page}&size=15` + `&name=${filterActivity}`, authConfig(token))
         .then(res => {
-            console.log(res);
+            console.log(res.data.content);
             return Promise.resolve(res.data.content);
         })
         .catch(err => {
