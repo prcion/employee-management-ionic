@@ -11,23 +11,31 @@ import {
     IonLoading,
     IonPage,
     IonTitle,
-    IonToolbar
+    IonToolbar, useIonViewWillEnter
 } from "@ionic/react";
 import React, {useContext, useState} from "react";
 import {ActivityInterface} from "./ActivityInterface";
 import Activity from "./Activity";
-import {add} from "ionicons/icons";
+import {add, sadOutline} from "ionicons/icons";
 import {ActivityContext} from "./ActivityProvider";
 import {RouteComponentProps} from "react-router";
 import {useNetwork} from "../network/useNetwork";
+import {isNumber} from "util";
 
 
 const ActivityList: React.FC<RouteComponentProps> = ({ history }) => {
-    const { logout, activities, fetching, fetchingError } = useContext(ActivityContext);
-
+    let { disableInfiniteScroll, incrementPage, logout, activities, fetching, fetchingError } = useContext(ActivityContext);
+    const { networkStatus } = useNetwork();
+    const [items, setItems] = useState<string[]>([]);
+    // const [page, incrementPage] = useState(0);
     const handleLogOut = () => {
         logout?.();
     };
+
+    async function searchNext($event: CustomEvent<void>) {
+        incrementPage?.();
+        ($event.target as HTMLIonInfiniteScrollElement).complete();
+    }
 
 
     return (
@@ -60,6 +68,13 @@ const ActivityList: React.FC<RouteComponentProps> = ({ history }) => {
                 {fetchingError && (
                     <div>{fetchingError.message || 'Failed to fetch items'}</div>
                 )}
+                <IonInfiniteScroll threshold="100px"
+                                   disabled={disableInfiniteScroll}
+                                   onIonInfinite={(e: CustomEvent<void>) => searchNext(e)}>
+                    <IonInfiniteScrollContent
+                      loadingText="Loading more activities...">
+                    </IonInfiniteScrollContent>
+                </IonInfiniteScroll>
 
                 <IonFab vertical="bottom" horizontal="center" slot="fixed">
                     <IonFabButton onClick={() => history.push('/activity')}>

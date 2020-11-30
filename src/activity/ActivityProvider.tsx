@@ -1,4 +1,4 @@
-import React, {useCallback, useContext, useEffect, useReducer} from "react";
+import React, {useCallback, useContext, useEffect, useReducer, useState} from "react";
 import {ActivityInterface} from "./ActivityInterface";
 import {createActivity, getActivities, newWebSocket, updateActivity} from "./ActivityService";
 import PropTypes from 'prop-types';
@@ -7,7 +7,7 @@ import {Plugins} from "@capacitor/core";
 import {useNetwork} from "../network/useNetwork";
 
 type SaveActivityFn = (activity: ActivityInterface) => Promise<any>;
-
+export type incrementPage = () => void;
 export interface ActivityState {
     activities?: ActivityInterface[];
     fetching: boolean;
@@ -16,6 +16,8 @@ export interface ActivityState {
     savingError?: Error | null;
     saveActivity?: SaveActivityFn;
     logout?: LogoutFn;
+    incrementPage?: incrementPage;
+    disableInfiniteScroll?: boolean;
 }
 
 export interface ActivityProps extends ActivityState {
@@ -55,7 +57,8 @@ const reducer: (state: ActivityState, action: ActionProps) => ActivityState =
                     key: 'activities',
                     value: JSON.stringify(payload.items)
                 });
-                return { ...state, activities: payload.items, fetching: false };
+                console.log([...(state.activities || []), ...payload.items]);
+                return { ...state, activities: [...(state.activities || []), ...payload.items], fetching: false };
             case FETCH_ACTIVITY_FAILED:
                 return { ...state, fetchingError: payload.error, fetching: false };
             case SAVE_ACTIVITY_STARTED:
@@ -92,11 +95,14 @@ export const ActivityProvider: React.FC<ActivityProviderProps> = ({children}) =>
     const { logout, token } = useContext(AuthContext);
     const [state, dispatch] = useReducer(reducer, initialState);
     const { activities, fetching, fetchingError, saving, savingError } = state;
-    const { networkStatus } = useNetwork();
-    useEffect(getActivitiesEffect, [token]);
+    let [page, incremPage] = useState(0);
+    const incrementPage = useCallback<incrementPage>(incrementPageCallback, []);
+    const [disableInfiniteScroll, setDisableInfiniteScroll] = useState<boolean>(false);
+    useEffect(getActivitiesEffect, [token, page]);
     useEffect(wsEffect, []);
     const saveActivity = useCallback<SaveActivityFn>(saveActivityCallback, [token]);
-    const value = { logout, activities, fetching, fetchingError, saving, savingError, saveActivity};
+    const value = { disableInfiniteScroll, incrementPage, logout, activities, fetching, fetchingError, saving, savingError, saveActivity};
+
     const { Storage } = Plugins;
     return (
         <ActivityContext.Provider value={value}>
@@ -104,7 +110,13 @@ export const ActivityProvider: React.FC<ActivityProviderProps> = ({children}) =>
         </ActivityContext.Provider>
     );
 
+    function incrementPageCallback(): void {
+        incremPage(page++);
+        console.log(page);
+    }
+
     function getActivitiesEffect() {
+        console.log("page" + page);
         let canceled = false;
         // if (!networkStatus.connected) {
         //     console.log("true");
@@ -125,9 +137,14 @@ export const ActivityProvider: React.FC<ActivityProviderProps> = ({children}) =>
             }
             try {
                 dispatch({ type: FETCH_ACTIVITY_STARTED });
-                const items = await getActivities(token);
-                if (!canceled) {
-                    dispatch({ type: FETCH_ACTIVITY_SUCCEEDED, payload: { items } });
+                const items = await getActivities(token, page);
+                if (items && items.length > 0) {
+                    if (!canceled) {
+                        dispatch({ type: FETCH_ACTIVITY_SUCCEEDED, payload: { items } });
+                    }
+                    setDisableInfiniteScroll(items.length < 10);
+                } else {
+                    setDisableInfiniteScroll(true);
                 }
             } catch (error) {
                 dispatch({ type: FETCH_ACTIVITY_FAILED, payload: { error } });
