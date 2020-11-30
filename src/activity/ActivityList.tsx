@@ -19,9 +19,7 @@ import Activity from "./Activity";
 import {add} from "ionicons/icons";
 import {ActivityContext} from "./ActivityProvider";
 import {RouteComponentProps} from "react-router";
-import {Plugins} from "@capacitor/core";
-import {Redirect} from "react-router-dom";
-import {AuthContext} from "../auth";
+
 
 const ActivityList: React.FC<RouteComponentProps> = ({ history }) => {
     const { logout, activities, fetching, fetchingError } = useContext(ActivityContext);

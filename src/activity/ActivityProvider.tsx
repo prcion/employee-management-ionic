@@ -3,6 +3,7 @@ import {ActivityInterface} from "./ActivityInterface";
 import {createActivity, getActivities, newWebSocket, updateActivity} from "./ActivityService";
 import PropTypes from 'prop-types';
 import {AuthContext, LogoutFn} from "../auth";
+import {Plugins} from "@capacitor/core";
 
 type SaveActivityFn = (activity: ActivityInterface) => Promise<any>;
 
@@ -82,7 +83,7 @@ export const ActivityProvider: React.FC<ActivityProviderProps> = ({children}) =>
     useEffect(wsEffect, []);
     const saveActivity = useCallback<SaveActivityFn>(saveActivityCallback, [token]);
     const value = { logout, activities, fetching, fetchingError, saving, savingError, saveActivity};
-
+    const { Storage } = Plugins;
     return (
         <ActivityContext.Provider value={value}>
             {children}
@@ -124,15 +125,25 @@ export const ActivityProvider: React.FC<ActivityProviderProps> = ({children}) =>
 
     function wsEffect() {
         let canceled = false;
+        let userId: number;
         const closeWebSocket = newWebSocket((message) => {
             if (canceled) {
                 return;
             }
+            const res = Storage.get({ key: 'userId' });
+            res.then(r => {
+                if(r.value != null) {
+                    userId = parseInt(r.value);
+                }
+            });
             const {event, payload} = message.body;
-
-            if (event === 'created' || event === 'updated') {
-                console.log("ab");
-                dispatch({type: SAVE_ACTIVITY_SUCCEEDED, payload: {payload}});
+            console.log("user from storage: " + userId);
+            console.log("user from be: "+payload.userId);
+            if (userId != null && userId === payload.userId) {
+                if (event === 'created' || event === 'updated') {
+                    console.log("ab");
+                    dispatch({type: SAVE_ACTIVITY_SUCCEEDED, payload: {payload}});
+                }
             }
         });
         return () => {

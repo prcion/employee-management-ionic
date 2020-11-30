@@ -62,7 +62,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   );
 
   function logoutCallback(): void {
-    console.log("11");
     Storage.clear();
 
     setState({
@@ -75,7 +74,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }
 
   function loginCallback(username?: string, password?: string): void {
-    console.log("vine aici");
     setState({
       ...state,
       pendingAuthentication: true,
@@ -101,10 +99,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           isAuthenticating: true,
         });
         const { username, password } = state;
-        const { token } = await loginApi(username, password);
+        const { token, userId } = await loginApi(username, password);
         await Storage.set({
           key: 'token',
           value: token
+        });
+        await Storage.set({
+          key: 'userId',
+          value: JSON.stringify(userId)
         });
         if (canceled) {
           return;
